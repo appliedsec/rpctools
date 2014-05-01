@@ -29,7 +29,7 @@ import ssl
 __license__ = """Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
- 
+
   http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
@@ -84,7 +84,7 @@ class CertValidatingHTTPSConnection(httplib.HTTPConnection):
         self.cert_file = cert_file
         self.ca_certs = ca_certs
         self.validate_cert_hostname = validate_cert_hostname
-        
+
         if self.ca_certs:
             self.cert_reqs = ssl.CERT_REQUIRED
         else:
@@ -135,31 +135,6 @@ class CertValidatingHTTPSConnection(httplib.HTTPConnection):
                 raise InvalidCertificateException(hostname, cert, 'hostname mismatch')
 
 
-class CertValidatingHTTPS(httplib.HTTP):
-                """Compatibility with 1.5 httplib interface
-
-                Python 1.5.2 did not have an HTTPS class, but it defined an
-                interface for sending http requests that is also useful for
-                https.
-                """
-
-                _connection_class = CertValidatingHTTPSConnection
-
-                def __init__(self, host='', port=None, key_file=None, cert_file=None, ca_certs=None,
-                                         validate_cert_hostname=True, strict=None, **kwargs):
-                        # provide a default host, pass the X509 cert info
-
-                        # urf. compensate for bad input.
-                        if port == 0:
-                                port = None
-                        self._setup(self._connection_class(host, port, key_file,
-                                                                                             cert_file, ca_certs, validate_cert_hostname, strict))
-
-                        # we never actually use these for anything, but we keep them
-                        # here for compatibility with post-1.5.2 CVS.
-                        self.key_file = key_file
-                        self.cert_file = cert_file
-                        
 class CertValidatingHTTPSHandler(urllib2.AbstractHTTPHandler):
     """An HTTPHandler that validates SSL certificates."""
 

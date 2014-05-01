@@ -27,11 +27,13 @@ if not found_news:
     warnings.warn('No news for this version found.')
 
 long_description = """
-The rpctools package provides client libraries for working with RPC services with enhanced SSL support.
+The rpctools package provides client libraries for working with RPC services
+with enhanced SSL support.
 
-Currently the only protocol implemented is JSON-RPC.  The enhanced SSL support is simply that these libraries
-can present client certificates for autentication and can be setup to require a trusted SSL connection with 
-the server (validating CA and hsotname matches).
+Currently the only protocol implemented is JSON-RPC.  The enhanced SSL
+support is simply that these libraries can present client certificates
+for authentication and can be set up to require a trusted SSL connection with
+the server (validating CA and hostname matches).
 """
 
 pkg_name = 'rpctools'
@@ -50,16 +52,10 @@ setup(
     license='Apache',
     packages=find_packages(exclude=['tests', 'ez_setup']),
     include_package_data=True,
-    test_suite='nose.collector',
     zip_safe=True,
     author='Hans Lellelid',
     author_email='hans@xmpl.org',
     url='http://github.com/appliedsec/rpctools',
-    setup_requires=['nose'],
-    entry_points="""
-    """,
-    install_requires=[],
-    tests_require=[],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
