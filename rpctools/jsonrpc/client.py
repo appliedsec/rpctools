@@ -13,6 +13,7 @@ import base64
 import string
 
 from rpctools.six.moves.http_cookies import SimpleCookie
+from rpctools.six.moves.urllib.parse import urlparse, unquote
 from rpctools.jsonrpc.transport import Transport, SafeTransport, TLSConnectionPoolSafeTransport, TLSConnectionPoolTransport
 from rpctools.jsonrpc.exc import JsonRpcError, ResponseError, Fault
 
@@ -119,17 +120,18 @@ class ServerProxy(object):
         if extra_headers is None:
             extra_headers = {}
 
-        self.type, remainder = urllib.splittype(uri)
+        parsed_uri = urlparse(uri)
+
+        self.type = parsed_uri.scheme
         if self.type not in ("http", "https"):
             raise JsonRpcError("unsupported JSON-RPC uri: %s" % uri)
 
-        (host_part, self.handler) = urllib.splithost(remainder)
+        self.handler = parsed_uri.netloc  # I'm guessing here :-/
+        self.host = parsed_uri.hostname
 
-        # If we have auth info in our host part, remove it and add it to extra headers
-        # (This is based on impl in xmlrpclib)
-        (auth, self.host) = urllib.splituser(host_part)
-        if auth:
-            auth = base64.encodestring(urllib.unquote(auth))
+        if parsed_uri.username and parsed_uri.password:
+            auth = (parsed_uri.username, parsed_uri.password)
+            auth = base64.encodestring(unquote(auth))
             auth = string.join(string.split(auth), "") # get rid of whitespace
             extra_headers.update({"Authorization": "Basic " + auth})
 
