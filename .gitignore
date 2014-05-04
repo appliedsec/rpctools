@@ -1,7 +1,13 @@
-.*
+
+# python things
 *.pyc
 *.egg-info
 *.egg
-env
 build
 dist
+
+# virtualenv
+env*
+
+# tox
+.tox
