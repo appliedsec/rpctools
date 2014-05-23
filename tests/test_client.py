@@ -53,7 +53,7 @@ class TestUrllibImplementation(object):
         ('http://myusername:mypassword@myhostname.com/foo/bar/baz.html',
          '/foo/bar/baz.html'),
         ('http://foo.com/monkey/butler.html?one=foo&two=bar',
-         '/monkey/butler.html?one=foo&two=bar'),
+         '/monkey/butler.html'),
     ])
     def test_handler(self, uri, handler):
         proxy = ServerProxy(uri)
@@ -76,4 +76,4 @@ class TestUrllibImplementation(object):
         uri = 'http://myusername:mypassword@myhostname.com/foo/bar/baz.html'
         proxy = ServerProxy(uri)
         assert proxy.extra_headers['Authorization'] == \
-            'Basic bXl1c2VybmFtZTpteXBhc3N3b3Jk'  # Urlencoded.
+            b'Basic bXl1c2VybmFtZTpteXBhc3N3b3Jk'  # Urlencoded.

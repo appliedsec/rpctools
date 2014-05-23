@@ -126,14 +126,14 @@ class ServerProxy(object):
         if self.type not in ("http", "https"):
             raise JsonRpcError("unsupported JSON-RPC uri: %s" % uri)
 
-        self.handler = parsed_uri.netloc  # I'm guessing here :-/
+        self.handler = parsed_uri.path
         self.host = parsed_uri.hostname
 
         if parsed_uri.username and parsed_uri.password:
-            auth = (parsed_uri.username, parsed_uri.password)
-            auth = base64.encodestring(unquote(auth))
-            auth = string.join(string.split(auth), "") # get rid of whitespace
-            extra_headers.update({"Authorization": "Basic " + auth})
+            auth = '{}:{}'.format(parsed_uri.username, parsed_uri.password)
+            auth = base64.encodestring(unquote(auth).encode('ascii'))
+            auth = auth.strip()
+            extra_headers.update({"Authorization": b"Basic " + auth})
 
         self.key_file = key_file
         self.cert_file = cert_file
