@@ -2,9 +2,10 @@ from __future__ import absolute_import
 
 import sys
 import socket
-import httplib
 import logging
 
+from rpctools.six import reraise
+from rpctools.six.moves import http_client as httplib
 from rpctools.jsonrpc import ssl_wrapper
 from rpctools.jsonrpc.exc import ConnectionError, ProtocolError
 from rpctools.jsonrpc.pool import TLSConnectionPoolMixin
@@ -93,7 +94,7 @@ class Transport(object):
             self.handle_connection_error(host, x)
             exc_class, exc, tb = sys.exc_info()
             cerror = ConnectionError("Error connecting to host %s: %r" % (host, x))
-            raise ConnectionError, cerror, tb
+            reraise(ConnectionError, cerror, exc_traceback=tb)
 
     def handle_connection_error(self, host, x):
         """

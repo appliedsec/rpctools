@@ -20,11 +20,18 @@ Extensions to allow HTTPS requests with SSL certificate validation.
 Adapted from `http://code.google.com/p/googleappengine/source/browse/trunk/python/google/appengine/tools/https_wrapper.py`
 """
 
-import httplib
 import re
 import socket
-import urllib2
 import ssl
+
+from rpctools import six
+from rpctools.six.moves import http_client as httplib
+from rpctools.six.moves.urllib.error import URLError
+
+if six.PY2:
+    from urllib2 import AbstractHTTPHandler
+elif six.PY3:
+    from urllib.request import AbstractHTTPHandler
 
 __license__ = """Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -124,10 +131,11 @@ class CertValidatingHTTPSConnection(httplib.HTTPConnection):
         "Connect to a host on a given (SSL) port."
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((self.host, self.port))
-        self.sock = ssl.wrap_socket(sock, keyfile=self.key_file,
-                                                                certfile=self.cert_file,
-                                                                cert_reqs=self.cert_reqs,
-                                                                ca_certs=self.ca_certs)
+        self.sock = ssl.wrap_socket(sock,
+                                    keyfile=self.key_file,
+                                    certfile=self.cert_file,
+                                    cert_reqs=self.cert_reqs,
+                                    ca_certs=self.ca_certs)
         if (self.cert_reqs & ssl.CERT_REQUIRED) and self.validate_cert_hostname:
             cert = self.sock.getpeercert()
             hostname = self.host.split(':', 0)[0]
@@ -135,12 +143,12 @@ class CertValidatingHTTPSConnection(httplib.HTTPConnection):
                 raise InvalidCertificateException(hostname, cert, 'hostname mismatch')
 
 
-class CertValidatingHTTPSHandler(urllib2.AbstractHTTPHandler):
+class CertValidatingHTTPSHandler(AbstractHTTPHandler):
     """An HTTPHandler that validates SSL certificates."""
 
     def __init__(self, **kwargs):
         """Constructor. Any keyword args are passed to the httplib handler."""
-        urllib2.AbstractHTTPHandler.__init__(self)
+        AbstractHTTPHandler.__init__(self)
         self._connection_args = kwargs
 
     def https_open(self, req):
@@ -150,10 +158,9 @@ class CertValidatingHTTPSHandler(urllib2.AbstractHTTPHandler):
             return CertValidatingHTTPSConnection(host, **full_kwargs)
         try:
             return self.do_open(http_class_wrapper, req)
-        except urllib2.URLError, e:
+        except URLError as e:
             if type(e.reason) == ssl.SSLError and e.reason.args[0] == 1:
-                raise InvalidCertificateException(req.host, '',
-                                                                                    e.reason.args[1])
+                raise InvalidCertificateException(req.host, '', e.reason.args[1])
             raise
 
-    https_request = urllib2.AbstractHTTPHandler.do_request_
+    https_request = AbstractHTTPHandler.do_request_
