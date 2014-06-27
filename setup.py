@@ -13,7 +13,7 @@ except ImportError:
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-version = '0.1'
+version = '0.2'
 
 news = os.path.join(os.path.dirname(__file__), 'docs', 'news.rst')
 news = open(news).read()
