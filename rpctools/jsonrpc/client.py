@@ -127,7 +127,8 @@ class ServerProxy(object):
             raise JsonRpcError("unsupported JSON-RPC uri: %s" % uri)
 
         self.handler = parsed_uri.path
-        self.host = parsed_uri.hostname
+        port = parsed_uri.port or (80 if self.type == 'http' else 443)
+        self.host = '{}:{}'.format(parsed_uri.hostname, port)
 
         if parsed_uri.username and parsed_uri.password:
             auth = '{}:{}'.format(parsed_uri.username, parsed_uri.password)
@@ -190,7 +191,7 @@ class ServerProxy(object):
         data = response.read()
 
         try:
-            decoded = json.loads(data)
+            decoded = json.loads(data.decode('utf-8'))
         except Exception as x:
             raise ResponseError("Unable to parse response data as JSON: %s" % x)
 

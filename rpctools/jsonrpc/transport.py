@@ -94,7 +94,7 @@ class Transport(object):
             self.handle_connection_error(host, x)
             exc_class, exc, tb = sys.exc_info()
             cerror = ConnectionError("Error connecting to host %s: %r" % (host, x))
-            reraise(ConnectionError, cerror, exc_traceback=tb)
+            reraise(ConnectionError, cerror, tb)
 
     def handle_connection_error(self, host, x):
         """
