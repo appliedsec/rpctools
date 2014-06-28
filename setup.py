@@ -1,5 +1,6 @@
 """
-
+The rpctools package provides client libraries for working with RPC services
+with enhanced SSL support.
 """
 import re
 import os.path
