@@ -23,12 +23,14 @@ class JsonRpcError(Exception):
     with the server, whereas faults are problems reported back from the remote server.
     """
 
+
 class ConnectionError(JsonRpcError):
     """
     Indicates an error at the TCP connection level.
 
     This exception is raised when a socket.error is raised from the underlying httplib layer.
     """
+
 
 class ProtocolError(JsonRpcError):
     """
@@ -42,11 +44,13 @@ class ProtocolError(JsonRpcError):
         self.errcode = errcode
         self.errmsg = errmsg
         self.headers = headers
+
     def __repr__(self):
         return (
             "<ProtocolError for %s: %s %s>" %
             (self.url, self.errcode, self.errmsg)
             )
+
 
 class ResponseError(JsonRpcError):
     """
@@ -56,6 +60,7 @@ class ResponseError(JsonRpcError):
     exception will be raised if the response does not match this structure.
     """
     pass
+
 
 class Fault(Exception):
     """

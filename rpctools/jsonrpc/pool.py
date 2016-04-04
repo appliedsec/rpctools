@@ -16,6 +16,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License."""
 
+
 class Pool(ThreadLocal):
     """
     A thread-local subclass that is responsible for managing a pool of connections,
@@ -28,6 +29,7 @@ class Pool(ThreadLocal):
         self.connections = {}
 
 pool = Pool()
+
 
 class TLSConnectionPoolMixin(object):
     """
@@ -58,7 +60,7 @@ class TLSConnectionPoolMixin(object):
         Overrides method to return an existing connection from thread-local pool
         instead of creating a new one.
         """
-        if not host in pool.connections:
+        if host not in pool.connections:
             self.logger.debug("No connection in pool for %s, creating." % host)
             conn = super(TLSConnectionPoolMixin, self).connect(host)
             pool.connections[host] = conn

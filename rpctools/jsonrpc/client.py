@@ -11,6 +11,7 @@ import urllib
 import json
 import base64
 import string
+import warnings
 
 from rpctools.six.moves.http_cookies import SimpleCookie
 from rpctools.six.moves.urllib.parse import urlparse, unquote
@@ -28,6 +29,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License."""
+
 
 # -----------------------------------------------------------------------------
 # "INTERNAL" CLASSES
@@ -74,6 +76,7 @@ class _Method(object):
     def __repr__(self):
         return '<%s name=%s>' % (self.__class__.__name__, self._name)
 
+
 # -----------------------------------------------------------------------------
 # PUBLIC CLASSES
 # -----------------------------------------------------------------------------
@@ -107,14 +110,15 @@ class ServerProxy(object):
     method_class = _Method
 
     def __init__(self, uri, key_file=None, cert_file=None, ca_certs=None, validate_cert_hostname=True,
-                 extra_headers=None, timeout=None, pool_connections=False):
+                 extra_headers=None, timeout=None, pool_connections=False, ssl_opts=None):
         """
         :param uri: The endpoint JSON-RPC server URL.
-        :param key_file: Secret key to use for ssl connection.
-        :param cert_file: Cert to send to server for ssl connection.
-        :param ca_certs: File containing concatenated list of certs to validate server cert against.
+        :param key_file: (Deprecated) Secret key to use for ssl connection.
+        :param cert_file: (Deprecated) Cert to send to server for ssl connection.
+        :param ca_certs: (Deprecated) File containing concatenated list of certs to validate server cert against.
         :param extra_headers: Any additional headers to include with all requests.
         :param pool_connections: Whether to use a thread-local connection pool for connections.
+        :param ssl_opts: Dictionary of options passed to ssl.wrap_socket
         """
         self.logger = logging.getLogger('{0.__module__}.{0.__name__}'.format(self.__class__))
         if extra_headers is None:
@@ -136,10 +140,13 @@ class ServerProxy(object):
             auth = auth.strip()
             extra_headers.update({"Authorization": b"Basic " + auth})
 
-        self.key_file = key_file
-        self.cert_file = cert_file
-        self.ca_certs = ca_certs
         self.validate_cert_hostname = validate_cert_hostname
+        self.ssl_opts = ssl_opts or {}
+        deprecated_params = {'keyfile': key_file, 'certfile': cert_file, 'ca_certs': ca_certs}
+        for opt, val in deprecated_params.items():
+            if val is not None:
+                warnings.warn('key_file, cert_file, and ca_certs arguments are deprecated; use ssl_opts argument instead', DeprecationWarning)
+                self.ssl_opts.setdefault(opt, val)
 
         # TODO: This could probably be a little cleaner :)
         if pool_connections:
@@ -149,13 +156,12 @@ class ServerProxy(object):
                 self.transport = TLSConnectionPoolTransport(timeout=timeout)
         else:
             if self.type == "https":
-                self.transport = SafeTransport(key_file=self.key_file, cert_file=self.cert_file,
-                    ca_certs=self.ca_certs, validate_cert_hostname=self.validate_cert_hostname)
+                self.transport = SafeTransport(timeout=timeout, ssl_opts=self.ssl_opts, validate_cert_hostname=self.validate_cert_hostname)
             else:
                 self.transport = Transport(timeout=timeout)
 
         self.extra_headers = extra_headers
-        self.id = 0 # Initialize our request ID (gets incremented for every request)
+        self.id = 0  # Initialize our request ID (gets incremented for every request)
 
     def _request(self, methodname, params):
         """
@@ -174,7 +180,7 @@ class ServerProxy(object):
         :raise ProtocolError: Re-raises exception if non-200 response received.
         :raise Fault: If the response is an error message from remote application.
         """
-        self.id += 1 # Increment our "unique" identifier for every request.
+        self.id += 1  # Increment our "unique" identifier for every request.
 
         data = dict(id=self.id, method=methodname, params=params)
 
@@ -204,14 +210,14 @@ class ServerProxy(object):
         if not (('result' in decoded) or ('error' in decoded)):
             # Include the decoded result (or part of it) in the error we raise
             r = repr(decoded)
-            if len(r) > 256: # a hard-coded value to keep the exception message to a sane length
+            if len(r) > 256:  # a hard-coded value to keep the exception message to a sane length
                 r = r[0:255] + '...'
             raise ResponseError('Malformed JSON-RPC response to %s: %s' % (methodname, r))
 
         if 'error' in decoded and decoded['error']:
             raise Fault(decoded['error']['code'], decoded['error']['message'])
 
-        if not 'result' in decoded:
+        if 'result' not in decoded:
             raise ResponseError('Malformed JSON-RPC response: %r' % decoded)
 
         return decoded['result']
@@ -276,7 +282,7 @@ class RawServerProxy(ServerProxy):
         :rtype: C{httplib.HTTPResponse}
         :raise ProtocolError: Re-raises exception if non-200 response received.
         """
-        self.id += 1 # Increment our "unique" identifier for every request.
+        self.id += 1  # Increment our "unique" identifier for every request.
 
         data = dict(id=self.id, method=methodname, params=params)
 
@@ -291,6 +297,7 @@ class RawServerProxy(ServerProxy):
         self._handle_response(response)
 
         return response
+
 
 class CookieKeeperMixin(object):
     """
@@ -389,6 +396,7 @@ class CookieKeeperMixin(object):
 
 class CookieAwareServerProxy(CookieKeeperMixin, ServerProxy):
     pass
+
 
 class CookieAwareRawServerProxy(CookieKeeperMixin, RawServerProxy):
     pass

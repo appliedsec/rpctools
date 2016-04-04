@@ -61,7 +61,7 @@ class TestUrllibImplementation(object):
 
     @pytest.mark.parametrize('uri,host', [
         ('http://myusername:mypassword@myhostname.com/foo/bar/baz.html',
-         'myhostname.com'),
+         'myhostname.com:80'),
     ])
     def test_host(self, uri, host):
         proxy = ServerProxy(uri)

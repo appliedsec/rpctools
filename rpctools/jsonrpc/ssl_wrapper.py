@@ -67,35 +67,26 @@ class InvalidCertificateException(httplib.HTTPException):
                         'http://code.google.com/appengine/kb/general.html#rpcssl' %
                         (self.host, self.reason, self.cert))
 
+
 class CertValidatingHTTPSConnection(httplib.HTTPConnection):
     """An HTTPConnection that connects over SSL and validates certificates."""
 
     default_port = httplib.HTTPS_PORT
 
-    def __init__(self, host, port=None, key_file=None, cert_file=None,
-                             ca_certs=None, validate_cert_hostname=True, strict=None, **kwargs):
+    def __init__(self, host, port=None, ssl_opts=None, validate_cert_hostname=True, strict=None, **kwargs):
         """Constructor.
 
         Args:
             host: The hostname. Can be in 'host:port' form.
             port: The port. Defaults to 443.
-            key_file: A file containing the client's private key
-            cert_file: A file containing the client's certificates
-            ca_certs: A file contianing a set of concatenated certificate authority
-                    certs for validating the server against.
+            ssl_opts: Options passed to ssl.wrap_socket
             strict: When true, causes BadStatusLine to be raised if the status line
                     can't be parsed as a valid HTTP/1.0 or 1.1 status line.
         """
         httplib.HTTPConnection.__init__(self, host, port, strict, **kwargs)
-        self.key_file = key_file
-        self.cert_file = cert_file
-        self.ca_certs = ca_certs
         self.validate_cert_hostname = validate_cert_hostname
-
-        if self.ca_certs:
-            self.cert_reqs = ssl.CERT_REQUIRED
-        else:
-            self.cert_reqs = ssl.CERT_NONE
+        self.ssl_opts = ssl_opts or {}
+        self.ssl_opts.setdefault('cert_reqs', ssl.CERT_REQUIRED if self.ssl_opts.get('ca_certs') else ssl.CERT_NONE)
 
     def _GetValidHostsForCert(self, cert):
         """Returns a list of valid host globs for an SSL certificate.
@@ -131,12 +122,8 @@ class CertValidatingHTTPSConnection(httplib.HTTPConnection):
         "Connect to a host on a given (SSL) port."
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((self.host, self.port))
-        self.sock = ssl.wrap_socket(sock,
-                                    keyfile=self.key_file,
-                                    certfile=self.cert_file,
-                                    cert_reqs=self.cert_reqs,
-                                    ca_certs=self.ca_certs)
-        if (self.cert_reqs & ssl.CERT_REQUIRED) and self.validate_cert_hostname:
+        self.sock = ssl.wrap_socket(sock, **self.ssl_opts)
+        if (self.ssl_opts['cert_reqs'] & ssl.CERT_REQUIRED) and self.validate_cert_hostname:
             cert = self.sock.getpeercert()
             hostname = self.host.split(':', 0)[0]
             if not self._ValidateCertificateHostname(cert, hostname):
