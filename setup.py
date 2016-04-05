@@ -14,18 +14,7 @@ except ImportError:
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-version = '0.3.0'
-
-news = os.path.join(os.path.dirname(__file__), 'docs', 'news.rst')
-news = open(news).read()
-parts = re.split(r'([0-9\.]+)\s*\n\r?-+\n\r?', news)
-found_news = ''
-for i in range(len(parts)-1):
-    if parts[i] == version:
-        found_news = parts[i+i]
-        break
-if not found_news:
-    warnings.warn('No news for this version found.')
+version = '0.3.1'
 
 long_description = """
 The rpctools package provides client libraries for working with RPC services
@@ -38,11 +27,6 @@ the server (validating CA and hostname matches).
 """
 
 pkg_name = 'rpctools'
-
-if found_news:
-    title = 'Changes in %s' % version
-    long_description += "\n%s\n%s\n" % (title, '-'*len(title))
-    long_description += found_news
 
 setup(
     name=pkg_name,
