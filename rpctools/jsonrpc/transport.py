@@ -22,6 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License."""
 
+
 class Transport(object):
     """
     Handles an HTTP transaction to a JSON-RPC server.
@@ -78,7 +79,7 @@ class Transport(object):
 
         # Add headers
         headers['User-Agent'] = self.user_agent
-        if not 'content-type' in header_keys_lower:
+        if 'content-type' not in header_keys_lower:
             headers['Content-Type'] = 'application/json'
         headers['Content-Length'] = len(body) if body is not None else 0
 
@@ -127,19 +128,16 @@ class SafeTransport(Transport):
     Extends/overrides Transport to use HTTPS connections.
     """
 
-    def __init__(self, key_file=None, cert_file=None, ca_certs=None, validate_cert_hostname=True, timeout=None):
+    def __init__(self, validate_cert_hostname=True, timeout=None, ssl_opts=None):
         super(SafeTransport, self).__init__(timeout=timeout)
-        self.key_file = key_file
-        self.cert_file = cert_file
-        self.ca_certs = ca_certs
         self.validate_cert_hostname = validate_cert_hostname
+        self.ssl_opts = ssl_opts or {}
 
     def connect(self, host):
         """
         Connect securely (HTTPS) to host.
         """
-        return ssl_wrapper.CertValidatingHTTPSConnection(host, key_file=self.key_file, cert_file=self.cert_file,
-                   ca_certs=self.ca_certs, validate_cert_hostname=self.validate_cert_hostname)
+        return ssl_wrapper.CertValidatingHTTPSConnection(host, ssl_opts=self.ssl_opts, validate_cert_hostname=self.validate_cert_hostname)
 
 
 class TLSConnectionPoolTransport(TLSConnectionPoolMixin, Transport):

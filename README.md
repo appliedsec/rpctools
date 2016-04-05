@@ -22,7 +22,6 @@ changes may be introduced.
 - Currently only JSON-RPC is supported.  We plan to add support for XML-RPC also.
 - The connection pooling system should be considered alpha-quality.  We would love feedback, but don't expect
   a bug-free experience.
-- We plan to support Python 3.x (no testing has been done, but using 2to3 may work with little modification)
 
 ## Installation
 
@@ -57,16 +56,13 @@ for connection pooling.
 ```python
 from rpctools.jsonrpc import ServerProxy, Fault
 
-proxy = ServerProxy(uri='https://example.com/jsonrpc',
-                    ca_certs='/path/to/ca-bundle.crt', # PEM-encoded contatenated set of CA certificates
-                    validate_cert_hostname=True # (This is also the default.)
-                    )
-
+proxy = ServerProxy('https://example.com/jsonrpc', ssl_opts={
+    'ca_certs': '/path/to/ca-bundle.crt', # PEM-encoded contatenated set of CA certificates
+})
 try:
     proxy.someServerMethod(param1, param2)
 except Fault:
-    # Fault instances are used to communicate server-side exceptions.
-    raise
+    raise  # Fault instances are used to communicate server-side exceptions.
 ```
 
 ### ... with basic auth
@@ -76,15 +72,11 @@ The underlying httplib library supports providing basic auth in the URI:
 ```python
 from rpctools.jsonrpc import ServerProxy, Fault
 
-proxy = ServerProxy(uri='https://foo:pass@example.com/jsonrpc',
-                    ca_certs='/path/to/ca-bundle.crt'
-                    )
-
+proxy = ServerProxy('https://foo:pass@example.com/jsonrpc')
 try:
     proxy.requiresAuth(param1, param2)
 except Fault:
-    # Fault instances are used to communicate server-side exceptions.
-    raise
+    raise  # Fault instances are used to communicate server-side exceptions.
 ```
 
 ### ... or client certs
@@ -92,17 +84,15 @@ except Fault:
 ```python
 from rpctools.jsonrpc import ServerProxy, Fault
 
-proxy = ServerProxy(uri='https://example.com/jsonrpc',
-                    key_file='/path/to/client.key', # PEM-encoded
-                    cert_file='/path/to/client.crt', # PEM-encoded
-                    ca_certs='/path/to/ca-bundle.crt'
-                    )
-
+proxy = ServerProxy('https://example.com/jsonrpc', ssl_opts={
+    keyfile='/path/to/client.key',   # PEM-encoded
+    certfile='/path/to/client.crt',  # PEM-encoded
+    ca_certs='/path/to/ca-bundle.crt'
+})
 try:
     proxy.someServerMethod(param1, param2)
 except Fault:
-    # Fault instances are used to communicate server-side exceptions.
-    raise
+    raise  # Fault instances are used to communicate server-side exceptions.
 ```
 
 ### ... connection pooling (ALPHA!)
@@ -113,13 +103,10 @@ to use the connection pool feature.
 ```python
 from rpctools.jsonrpc import ServerProxy, Fault
 
-proxy = ServerProxy(uri='http://example.com/jsonrpc',
-                    pool_connections=True)
-
+proxy = ServerProxy('http://example.com/jsonrpc', pool_connections=True)
 for (param1, param2) in some_params_list:
-	try:
-	    proxy.someServerMethod(param1, param2)
-	except Fault:
-	    # Fault instances are used to communicate server-side exceptions.
-	    raise
+    try:
+        proxy.someServerMethod(param1, param2)
+    except Fault:
+        raise  # Fault instances are used to communicate server-side exceptions.
 ```
