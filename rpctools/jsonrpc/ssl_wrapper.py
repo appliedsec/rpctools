@@ -87,6 +87,8 @@ class CertValidatingHTTPSConnection(httplib.HTTPConnection):
         self.validate_cert_hostname = validate_cert_hostname
         self.ssl_opts = ssl_opts or {}
         self.ssl_opts.setdefault('cert_reqs', ssl.CERT_REQUIRED if self.ssl_opts.get('ca_certs') else ssl.CERT_NONE)
+        # Enable SNI by default
+        self.ssl_opts.setdefault('server_hostname', host.split(':')[0])
 
     def _GetValidHostsForCert(self, cert):
         """Returns a list of valid host globs for an SSL certificate.
@@ -122,7 +124,20 @@ class CertValidatingHTTPSConnection(httplib.HTTPConnection):
         "Connect to a host on a given (SSL) port."
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((self.host, self.port))
-        self.sock = ssl.wrap_socket(sock, **self.ssl_opts)
+        # need to have backwards compatibility with the ability to pass arbitrairy kwargs to ssl.wrap_socket()
+        ctx = ssl.SSLContext(self.ssl_opts.get('ssl_version', ssl.PROTOCOL_TLSv1_2))
+        if 'certfile' in self.ssl_opts:
+            ctx.load_cert_chain(self.ssl_opts['certfile'], self.ssl_opts.get('keyfile', None))
+        if 'ca_certs' in self.ssl_opts:
+            ctx.load_verify_locations(self.ssl_opts['ca_certs'])
+        if 'ciphers' in self.ssl_opts:
+            ctx.set_ciphers(self.ssl_opts['ciphers'])
+        if 'cert_reqs' in self.ssl_opts:
+            ctx.verify_mode = self.ssl_opts['cert_reqs']
+        wrap_opts = dict(self.ssl_opts)
+        for k in ['certfile', 'ca_certs', 'keyfile', 'ssl_version', 'cert_reqs', 'ciphers']:
+            wrap_opts.pop(k, None)
+        self.sock = ctx.wrap_socket(sock, **wrap_opts)
         if (self.ssl_opts['cert_reqs'] & ssl.CERT_REQUIRED) and self.validate_cert_hostname:
             cert = self.sock.getpeercert()
             hostname = self.host.split(':', 0)[0]

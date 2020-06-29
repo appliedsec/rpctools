@@ -14,7 +14,7 @@ except ImportError:
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-version = '0.3.1'
+version = '0.3.2'
 
 long_description = """
 The rpctools package provides client libraries for working with RPC services
